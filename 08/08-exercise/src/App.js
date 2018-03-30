@@ -38,14 +38,54 @@ class Select extends React.Component {
     defaultValue: PropTypes.any
   };
 
+  state = {
+    isOpen: false,
+    value: this.props.defaultValue
+  };
+
+  handleToggle = () => {
+    this.setState({
+      isOpen: !this.state.isOpen
+    });
+  };
+
+  isControlled () {
+    return this.props.value != null;
+  }
+
   render() {
-    const isOpen = false;
+    const { isOpen } = this.state;
+    const { value } = this.isControlled() ? this.props : this.state;
+    let label;
+
+    const children = React.Children.map(this.props.children, (child) => {
+      if (child.props.value === value) {
+        label = child.props.children;
+      }
+
+      return React.cloneElement(child, {
+        onSelect: () => {
+          if (this.isControlled()) {
+            this.props.onChange(child.props.value);
+            this.setState({
+              isOpen: !isOpen
+            });
+          } else {
+            this.setState({ 
+              value: child.props.value,
+              isOpen: !isOpen
+            });
+          }
+        }
+      });
+    });
+
     return (
       <div className="select">
-        <button className="label">
-          label <span className="arrow">▾</span>
+        <button className="label" onClick={this.handleToggle} >
+          {label} <span className="arrow">▾</span>
         </button>
-        {isOpen && <ul className="options">{this.props.children}</ul>}
+        {isOpen && <ul className="options">{children}</ul>}
       </div>
     );
   }
@@ -53,7 +93,9 @@ class Select extends React.Component {
 
 class Option extends React.Component {
   render() {
-    return <li className="option">{this.props.children}</li>;
+    return <li className="option" onClick={this.props.onSelect}>
+      {this.props.children}
+    </li>;
   }
 }
 

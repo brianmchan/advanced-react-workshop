@@ -53,19 +53,43 @@ import FaPlay from "react-icons/lib/fa/play";
 import FaRepeat from "react-icons/lib/fa/repeat";
 import FaRotateLeft from "react-icons/lib/fa/rotate-left";
 
+const AudioContext = React.createContext();
+
 class AudioPlayer extends React.Component {
+  state = {
+    currentTime: 0,
+    duration: null,
+    isPlaying: false  // Can't use variable because we want to cause a re-render
+  }
+
+  getContext () {
+    return {
+      play: () => {
+        this.setState( { isPlaying: true });
+        this.audio.play();
+      },
+      pause: () => {
+        this.setState({ isPlaying: false });
+        this.audio.pause();
+      },
+      ...this.state
+    }
+  }
+
   render() {
     return (
-      <div className="audio-player">
-        <audio
-          src={null}
-          onTimeUpdate={null}
-          onLoadedData={null}
-          onEnded={null}
-          ref={n => (this.audio = n)}
-        />
-        {this.props.children}
-      </div>
+      <AudioContext.Provider value={this.getContext()}>
+        <div className="audio-player">
+          <audio
+            src={this.props.source}
+            onTimeUpdate={() => this.setState({ currentTime: this.audio.currentTime })}
+            onLoadedData={() => this.setState({ duration: this.audio.duration})}
+            onEnded={null}
+            ref={n => (this.audio = n)}
+          />
+          {this.props.children}
+        </div>
+      </AudioContext.Provider>
     );
   }
 }
@@ -73,14 +97,18 @@ class AudioPlayer extends React.Component {
 class Play extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="play"
-      >
-        <FaPlay />
-      </button>
+      <AudioContext.Consumer>
+        {(context) => (
+          <button
+            className="icon-button"
+            onClick={context.play}
+            disabled={context.isPlaying}
+            title="play"
+          >
+            <FaPlay />
+          </button>
+        )}
+      </AudioContext.Consumer>
     );
   }
 }
@@ -88,21 +116,31 @@ class Play extends React.Component {
 class Pause extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="pause"
-      >
-        <FaPause />
-      </button>
+      <AudioContext.Consumer>
+        {(context) => (
+          <button
+            className="icon-button"
+            onClick={context.pause}
+            disabled={!context.isPlaying}
+            title="pause"
+          >
+            <FaPause />
+          </button>
+        )}
+      </AudioContext.Consumer>
     );
   }
 }
 
 class PlayPause extends React.Component {
   render() {
-    return null;
+    return (
+      <AudioContext.Consumer>
+        {(context) => (
+          !context.isPlaying ? <Play /> : <Pause />
+        )}
+      </AudioContext.Consumer> 
+    )
   }
 }
 
@@ -139,14 +177,20 @@ class JumpBack extends React.Component {
 class Progress extends React.Component {
   render() {
     return (
-      <div className="progress" onClick={null}>
-        <div
-          className="progress-bar"
-          style={{
-            width: "23%"
-          }}
-        />
-      </div>
+      <AudioContext.Consumer>
+        {context => {
+          const progress = Math.round(context.currentTime / context.duration * 100);
+
+          return (
+            <div className="progress" onClick={null}>
+              <div
+                className="progress-bar"
+                style={{ width: isNaN(progress) ? "0%" : `${progress}%` }}
+              />
+            </div>
+          );
+        }}
+      </AudioContext.Consumer>
     );
   }
 }
