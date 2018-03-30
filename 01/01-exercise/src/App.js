@@ -3,7 +3,32 @@ import React, { Component } from "react";
 import subscribeToMessages from "./messages";
 import FadeIn from "./FadeIn";
 
+// Scroll down anytime new messages come
+// Don't scroll down if someone scrolls up
+
 class PinScrollToBottom extends Component {
+
+  componentDidMount() {
+    // this.doImperativeStuff();
+    this.scroll();
+  }
+
+  componentDidUpdate () {
+    // this.doImperativeStuff();
+    this.scroll();
+  }
+
+  componentWillUpdate () {
+    const { clientHeight, scrollTop, scrollHeight } = document.documentElement;
+    this.scrolledUp = clientHeight + scrollTop < scrollHeight;
+  }
+
+  scroll () {
+    if (!this.scrolledUp) {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    }
+  }
+
   render() {
     return this.props.children;
   }
@@ -23,7 +48,7 @@ class App extends Component {
   }
 
   render() {
-    const { messages } = this.state;
+    const { messages, scrollTop } = this.state;
     return (
       <div className="app">
         <div className="link">

@@ -9,24 +9,8 @@ import MenuIcon from "react-icons/lib/md/menu";
 import { set, get, subscribe } from "./local-storage";
 
 class App extends React.Component {
-  state = {
-    sidebarIsOpen: get("sidebarIsOpen", true)
-  };
-
-  componentDidMount() {
-    this.unsubscribe = subscribe(() => {
-      this.setState({
-        sidebarIsOpen: get("sidebarIsOpen")
-      });
-    });
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-
   render() {
-    const { sidebarIsOpen } = this.state;
+    const { sidebarIsOpen, setStorage } = this.props;
     return (
       <div className="app">
         <header>
@@ -34,7 +18,7 @@ class App extends React.Component {
             className="sidebar-toggle"
             title="Toggle menu"
             onClick={() => {
-              set("sidebarIsOpen", !sidebarIsOpen);
+              setStorage(!sidebarIsOpen);
             }}
           >
             <MenuIcon />
@@ -50,4 +34,38 @@ class App extends React.Component {
   }
 }
 
-export default App;
+function withStorage(key, defaultVal) {
+  return function (Comp) {
+    return class withStorage extends React.Component {
+      state = {
+        [key]: get(key, defaultVal)
+      };
+    
+      componentDidMount() {
+        this.unsubscribe = subscribe(() => {
+          this.setState({
+            [key]: get(key)
+          });
+        });
+      }
+    
+      componentWillUnmount() {
+        this.unsubscribe();
+      }
+
+      setStorage = (val) => {
+        set(key, val)
+      }
+
+      render() {
+        return <Comp 
+                {...this.props}
+                {...this.state}
+                setStorage={this.setStorage}
+              />;
+      }
+    }
+  }
+}
+
+export default withStorage("sidebarIsOpen", true)(App);
